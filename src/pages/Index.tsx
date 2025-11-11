@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Icon from '@/components/ui/icon';
+import InterceptionAnimation from '@/components/InterceptionAnimation';
 
 export default function Index() {
   const [activeThreats, setActiveThreats] = useState(0);
@@ -98,6 +99,10 @@ export default function Index() {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Передовые алгоритмы машинного обучения и автоматизированные системы реагирования
             </p>
+          </div>
+
+          <div className="mb-16">
+            <InterceptionAnimation />
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
