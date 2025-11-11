@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface Drone {
   id: number;
@@ -20,6 +20,50 @@ export default function InterceptionAnimation() {
   const [missiles, setMissiles] = useState<Missile[]>([]);
   const [intercepted, setIntercepted] = useState<number[]>([]);
   const [radarAngle, setRadarAngle] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const playSound = (frequency: number, duration: number, type: OscillatorType = 'sine') => {
+    if (!soundEnabled || !audioContextRef.current) return;
+    
+    const ctx = audioContextRef.current;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    
+    gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + duration);
+  };
+
+  const playDetectionSound = () => {
+    playSound(800, 0.1, 'square');
+    setTimeout(() => playSound(600, 0.1, 'square'), 100);
+  };
+
+  const playLaunchSound = () => {
+    playSound(300, 0.2, 'sawtooth');
+  };
+
+  const playInterceptionSound = () => {
+    playSound(200, 0.05, 'square');
+    setTimeout(() => playSound(150, 0.1, 'triangle'), 50);
+    setTimeout(() => playSound(100, 0.15, 'sine'), 100);
+  };
+
+  const enableSound = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    setSoundEnabled(true);
+  };
 
   useEffect(() => {
     const droneInterval = setInterval(() => {
@@ -32,6 +76,7 @@ export default function InterceptionAnimation() {
           angle: Math.random() * 360
         };
         setDrones(prev => [...prev, newDrone]);
+        playDetectionSound();
         
         setTimeout(() => {
           const missile: Missile = {
@@ -41,6 +86,7 @@ export default function InterceptionAnimation() {
             targetId: newDrone.id
           };
           setMissiles(prev => [...prev, missile]);
+          playLaunchSound();
         }, 1000);
       }
     }, 3000);
@@ -66,6 +112,7 @@ export default function InterceptionAnimation() {
           
           if (distance < 3) {
             setIntercepted(prev => [...prev, missile.targetId]);
+            playInterceptionSound();
             return null;
           }
           
@@ -233,6 +280,21 @@ export default function InterceptionAnimation() {
           <div>Ракет в полете: {missiles.length}</div>
         </div>
       </div>
+
+      {!soundEnabled && (
+        <button
+          onClick={enableSound}
+          className="absolute top-4 right-4 bg-accent/90 hover:bg-accent backdrop-blur px-4 py-2 rounded border border-accent font-mono text-sm font-bold transition-all"
+        >
+          🔊 ВКЛЮЧИТЬ ЗВУК
+        </button>
+      )}
+
+      {soundEnabled && (
+        <div className="absolute top-4 right-4 bg-primary/20 backdrop-blur px-3 py-2 rounded border border-primary/30 font-mono text-xs text-primary">
+          🔊 ЗВУК АКТИВЕН
+        </div>
+      )}
     </div>
   );
 }
