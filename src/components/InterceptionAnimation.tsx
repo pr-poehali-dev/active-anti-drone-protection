@@ -21,6 +21,8 @@ export default function InterceptionAnimation() {
   const [intercepted, setIntercepted] = useState<number[]>([]);
   const [radarAngle, setRadarAngle] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+  const [showSettings, setShowSettings] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const playSound = (frequency: number, duration: number, type: OscillatorType = 'sine') => {
@@ -36,8 +38,8 @@ export default function InterceptionAnimation() {
     oscillator.frequency.value = frequency;
     oscillator.type = type;
     
-    gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    gainNode.gain.setValueAtTime(0.1 * volume, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01 * volume, ctx.currentTime + duration);
     
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
@@ -291,8 +293,74 @@ export default function InterceptionAnimation() {
       )}
 
       {soundEnabled && (
-        <div className="absolute top-4 right-4 bg-primary/20 backdrop-blur px-3 py-2 rounded border border-primary/30 font-mono text-xs text-primary">
-          🔊 ЗВУК АКТИВЕН
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="bg-primary/20 hover:bg-primary/30 backdrop-blur px-3 py-2 rounded border border-primary/30 font-mono text-xs text-primary transition-all"
+          >
+            🔊 ЗВУК АКТИВЕН | ⚙️
+          </button>
+          
+          {showSettings && (
+            <div className="absolute top-full right-0 mt-2 bg-card/95 backdrop-blur p-4 rounded border border-primary/30 font-mono text-sm w-64 space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-primary font-bold">НАСТРОЙКИ ЗВУКА</span>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span>ГРОМКОСТЬ</span>
+                  <span className="text-primary">{Math.round(volume * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-border">
+                <button
+                  onClick={playDetectionSound}
+                  className="w-full bg-destructive/20 hover:bg-destructive/30 border border-destructive/40 px-3 py-2 rounded text-xs transition-all"
+                >
+                  🎵 ТЕСТ: ОБНАРУЖЕНИЕ
+                </button>
+                <button
+                  onClick={playLaunchSound}
+                  className="w-full bg-accent/20 hover:bg-accent/30 border border-accent/40 px-3 py-2 rounded text-xs transition-all"
+                >
+                  🎵 ТЕСТ: ЗАПУСК
+                </button>
+                <button
+                  onClick={playInterceptionSound}
+                  className="w-full bg-primary/20 hover:bg-primary/30 border border-primary/40 px-3 py-2 rounded text-xs transition-all"
+                >
+                  🎵 ТЕСТ: ПЕРЕХВАТ
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  setSoundEnabled(false);
+                  setShowSettings(false);
+                }}
+                className="w-full bg-destructive/20 hover:bg-destructive/30 border border-destructive px-3 py-2 rounded text-xs font-bold transition-all"
+              >
+                🔇 ОТКЛЮЧИТЬ ЗВУК
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
